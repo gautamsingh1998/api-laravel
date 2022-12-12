@@ -23,21 +23,24 @@ class UserController extends Controller
     $validator = Validator::make($request->all(),[
         'name'=>'required|string|min:2|max:100',
         'email'=>'required|string|email|max:100|unique:users,email',
-        'password'=>'required|string|min:6|confirmed'
+        'password'=>'required|string|min:6|confirmed',
+        'profile'=>'nullable|image',
     ]);
   
 
     if($validator->fails())
     {
-        return response()->json($validator->errors()->toArray());
-        
+        return response()->json($validator->errors()->toArray());  
     }
+
+   $path = $request->file('profile')->store('profile','public');
    $user = User::create([
         'name'=>$request->name,
         'email'=>$request->email,
         'password'=>Hash::make($request->password),
-
+        'profile' => $path,
     ]);
+   
     return response()->json([
         'msg'=>'User Inserted Successfuly',
         'user'=>$user
