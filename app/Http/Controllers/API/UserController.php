@@ -6,7 +6,8 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\User;
 use Illuminate\Support\Facades\Validator;
-use mail;
+use Mail;
+use Log;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Carbon;
@@ -146,7 +147,7 @@ class UserController extends Controller
         $user = User::where('email',$email)->get();
         if(count($user)>0)
         {
-            
+          
             
 
             $random = Str::random(40);
@@ -161,7 +162,7 @@ class UserController extends Controller
             Mail::send('verifyMail',['data'=>$data],function($message)use($data){
                 $message->to($data['email'])->subject($data['title']);
             });
-
+             
            $user = User::find($user[0]['id']);
            $user->remember_token = $random;
            $user->save();
@@ -175,4 +176,40 @@ class UserController extends Controller
 
       }
    }
+   public function requestOtp(Request $request)
+ {
+        $otp = rand(1000,9999);
+        Log::info("otp = ".$otp);
+        $user = User::where('email','=',$request->email)->update(['otp' => $otp]);
+
+        if($user){
+
+        $mail_details = [
+            'subject' => 'Testing Application OTP',
+            'body' => 'Your OTP is : '. $otp
+        ];
+       
+         \Mail::to($request->email)->send(new sendEmail($mail_details));
+       
+         return response(["status" => 200, "message" => "OTP sent successfully"]);
+        }
+        else{
+            return response(["status" => 401, 'message' => 'Invalid']);
+        }
+    }
+
+    public function verifyOtp(Request $request){
+    
+        $user  = User::where([['email','=',$request->email],['otp','=',$request->otp]])->first();
+        if($user){
+            auth()->login($user, true);
+            User::where('email','=',$request->email)->update(['otp' => null]);
+            $accessToken = auth()->user()->createToken('authToken')->accessToken;
+
+            return response(["status" => 200, "message" => "Success", 'user' => auth()->user(), 'access_token' => $accessToken]);
+        }
+        else{
+            return response(["status" => 401, 'message' => 'Invalid']);
+        }
+    }
 }

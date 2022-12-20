@@ -19,9 +19,12 @@ Route::group(['middleware'=>'api'],function($routes){
     Route::get('/profile',[UserController::class,'profile']);
     Route::post('/updateProfile',[UserController::class,'updateProfile']);
     Route::get('/send-verify-mail/{email}',[UserController::class,'sendVerifyMail']);
+
+    
     
 
 });
-
+Route::any('request_otp',[UserController::class,'requestOtp']);
+    Route::post('verify_otp', [UserController::class,'verifyOtp']);
 
 
